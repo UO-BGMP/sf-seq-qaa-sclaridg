@@ -1,4 +1,4 @@
-#Bi 624 (Fall 2017) – Problem Set 1
+# Bi 624 (Fall 2017) – Problem Set 1
 ## SF-Seq Quality Assessment Assignment
 
 The objectives of this assignment are to use existing tools for quality assessment and adaptor trimming, compare the quality assessments to those from your own software, and demonstrate your ability to summarize other important information about this RNA-Seq data set.
