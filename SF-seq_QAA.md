@@ -3,7 +3,7 @@
 
 The objectives of this assignment are to use existing tools for quality assessment and adaptor trimming, compare the quality assessments to those from your own software, and demonstrate your ability to summarize other important information about this RNA-Seq data set.
 
-###Data: 
+### Data: 
 Each of you will be working with 2 of the demultiplexed file pairs. For all steps below, process the two libraries separately. Library assignments are here: ```/projects/bgmp/Bi624/PS1_file_assignments.tsv```
 
 The demultiplexed .fastq files are here: ```/projects/bgmp/2017_sequencing/demultiplexed/```
