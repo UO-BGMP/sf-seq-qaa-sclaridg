@@ -1,0 +1,24 @@
+#!/bin/bash
+#SBATCH --partition=long
+#SBATCH --job-name=trimmomatic
+#SBATCH --output=/home/sclaridg/bi624/ps1/logs/trimmomatic.out
+#SBATCH --error=/home/sclaridg/bi624/ps1/logs/trimmomatic.err
+#SBATCH --time=0-24:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH --mail-user=sclaridg@uoregon.edu
+#SBATCH --mail-type=ALL
+
+# Load modules
+ml  easybuild Trimmomatic/0.36-Java-1.8.0_131
+ml list
+
+dir=/home/sclaridg/bi624/ps1/
+
+# Run Trimmomatic on 16_3D_mbnl library
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz $dir/out_16_3D_mbnl_R1_paired.fq.gz $dir/out_16_3D_mbnl_R1_unpaired.fq.gz $dir/out_16_3D_mbnl_R2_paired.fq.gz $dir/out_16_3D_mbnl_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices.fasta:2:30:10
+
+# Run Trimmomatic on 3_2B_control library
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/3_2B_control_R1.fastq.gz $dir/3_2B_control_R2.fastq.gz $dir/out_3_2B_control_R1_paired.fq.gz $dir/out_3_2B_control_R1_unpaired.fq.gz $dir/out_3_2B_control_R2_paired.fq.gz $dir/out_3_2B_control_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices.fasta:2:30:10
+
+exit

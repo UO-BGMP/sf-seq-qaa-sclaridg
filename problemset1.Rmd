@@ -76,8 +76,9 @@ The per-base N content plots are consistent with the quality score plots in that
 2. *Run your quality score plotting script from the index hopping assignment. Describe how the `FastQC` quality score distribution plots compare to your own. If different, propose an explanation. Also, does the runtime differ? If so, why?*
 
 - Submitted `stats.srun` script to run my stats script (`stats.py`) on all of my files
-    - Temporarily copied over all of my FASTQ files to unzip them because I couldn't get the `gzip` function to work in my script from the index hopping assignment
-    - Removed these files afterward to clean up my directory
+- Temporarily copied over all of my FASTQ files to unzip them because I couldn't get the `gzip` function to work in my script from the index hopping assignment
+- Removed these files afterward to clean up my directory
+
 ```
 cp /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R*_001.fastq.gz .
 cp /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R*_001.fastq.gz .
@@ -139,24 +140,173 @@ plot(bp_3_R2,
 
 The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
 
-The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. **WHY**
+The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. The difference in run time could potentially be due to the utility of the languages used. My code was written in Python, whereas FastQC was written in Java.
+
+**WHY**
+
+
+
+
 
 Part 2 – Adaptor trimming comparison
 ================================================================================
 
-3. Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed? 
-    - *Sanity check*: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.
-  
-4. Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.
+3. *Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed?*
 
-5. Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.
+**Differences**
+
+- `cutadapt`:
+    - Takes only a single file
+    - Can only do 3' or 5' adapters, not both, in a single command
+    - Barcode is declared as a flag in the command
+- `process_shortreads`: 
+    - Can take both the forward and reverse reads simultaneously
+    - Has quality filtering for dropping reads with uncalled bases or low quality scores
+    - Requires a list of barcodes
+- `Trimmomatic`: 
+    - Can take both the forward and reverse reads simultaneously
+    - Has options for numerous quality filters and trimming settings
+    - Requires a FASTA file containing your adapters with certain flags dictating how they should be used
+
+**`Trimmomatic`**
+
+- To run `Trimmomatic`, I had to make the FASTA file, which I named `indices.fasta` and contined the following information:
+```
+>index1
+ACGATCAG
+>index2
+CTGATCGT
+```
+- I submitted the `trimmomatic.srun` slurm script to run `Trimmomatic` on both libraries, one after the other
+- I used the example `ILLUMINACLIP:<fastaWithAdaptersEtc>:2:30:10` settings:
+    - Maximum of 2 mismatches in the adapter to occur, which will still allow a full match
+    - 30 specifies how accurate the match between the two 'adapter ligated' reads must be for PE palindrome read alignment (from [documentation](http://www.usadellab.org/cms/?page=trimmomatic))
+        - I did not include palindrome trimming flags in my FASTA file, so this is unnecessary other than a placeholder
+    - 10 specifies how accurate the match between any adapter etc. sequence must be against a read (from [documentation](http://www.usadellab.org/cms/?page=trimmomatic))
+
+**`cutadapt`**
+
+- For the sake of comparison, I also tried using `cutadapt` to trim the reads (see `cutadapt.srun` slurm script)
+
+
+*Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.*
+
+- I determined the total number of reads in each file:
+
+```
+$ zcat 16_3D_mbnl_R1.fastq.gz | wc -l
+32940788
+$ zcat 3_2B_control_R1.fastq.gz | wc -l
+27494036
+```
+
+- Using the following command skeleton, I determined how many sequences in each file contained the adapter:
+```
+zcat <file_name> | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | grep "<index_sequence>" | wc -l
+```
+
+- Here is a table of the results of the code right above:
+```{r, echo = FALSE}
+# Make vectors
+Library <- c(rep("16_3D_mbnl", 4), rep("3_2B_control", 4))
+Read <- rep(c("Forward", "Reverse"), 4)
+Index <- c("ACGATCAG", "ACGATCAG", "CTGATCGT", "CTGATCGT", "ACGATCAG", "ACGATCAG", "CTGATCGT", "CTGATCGT")
+Readcount <- c("75,570", "5,978", "5,043", "80,984", "2,696", "15,320", "16,715", "2,946")
+# Make data frame
+adapter_data <- data.frame(Library, Read, Index, Readcount)
+# Make table
+knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries that Contain Index Sequences")
+```
+
+
+
+4. *Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.*
+
+- I used UNIX commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data: **EDIT THIS AHHHHH**
+```
+$ cat SscoPEclean_R1.fastq | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > r1_length_distribution.txt
+$ cat SscoPEclean_R2.fastq | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > r2_length_distribution.txt
+```
+
+- I copied the distribution files to my local machine:**EDIT THIS AHHHHH**
+```
+$ scp hpc1:/home/sclaridg/bi623/assignment5/*txt .
+```
+
+- The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R.
+- Here are the plots for the 16_3D_mbnl library: **EDIT THIS AHHHHH**
+```{r Length Dist 16_3D_mbnl, fig.height=4, fig.width=6}
+# Read in the data tables
+r1 <- read.table("./r1_length_distribution.txt", sep = " ")
+r2 <- read.table("./r2_length_distribution.txt", sep = " ")
+
+# Plot the R1 distribution
+plot(r1$V2, log10(r1$V1),
+     main = "Read Length Distribution for Cleaned Reads\nfrom the Gulf Pipefish Male Brood Pouch",
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 25,
+     bg = "mediumpurple1")
+# Plot the R2 distribution
+points(r2$V2, log10(r2$V1),
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 24,
+     bg = "turquoise")
+legend("topleft",
+       c("Cleaned R1 Reads", "Cleaned R2 Reads"),
+       pch = c(25, 24),
+       pt.bg = c("mediumpurple1", "turquoise"),
+       bty = "n",
+       cex = 0.8,
+       xjust = 1)
+```
+
+- Here are the plots for the 3_2B_control library: **EDIT THIS AHHHHH**
+```{r Length Dist 3_2B_control, fig.height=4, fig.width=6}
+# Read in the data tables
+r1 <- read.table("./r1_length_distribution.txt", sep = " ")
+r2 <- read.table("./r2_length_distribution.txt", sep = " ")
+
+# Plot the R1 distribution
+plot(r1$V2, log10(r1$V1),
+     main = "Read Length Distribution for Cleaned Reads\nfrom the Gulf Pipefish Male Brood Pouch",
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 25,
+     bg = "mediumpurple1")
+# Plot the R2 distribution
+points(r2$V2, log10(r2$V1),
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 24,
+     bg = "turquoise")
+legend("topleft",
+       c("Cleaned R1 Reads", "Cleaned R2 Reads"),
+       pch = c(25, 24),
+       pt.bg = c("mediumpurple1", "turquoise"),
+       bty = "n",
+       cex = 0.8,
+       xjust = 1)
+```
+
+5. *Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.*
   
+
+
+
+
 Part 3 – rRNA reads and strand-specificity
 ================================================================================
 
 6. Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.
 
+
+
 7. Demonstrate convincingly that the SF-Seq data are from “strand-specific” RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.
+
+
+
 
 
 To turn in your work for this assignment
