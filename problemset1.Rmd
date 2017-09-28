@@ -1,0 +1,164 @@
+---
+title: "Problem Set 1: SF-Seq Quality Assessment Assignment"
+subtitle: "BI 624, Fall 2017"
+author: "Sally Claridge"
+date: "27 September 2017"
+output: html_document
+---
+
+The objectives of this assignment are to use existing tools for quality assessment and adaptor trimming, compare the quality assessments to those from your own software, and demonstrate your ability to summarize other important information about this RNA-Seq data set.
+
+Data
+================================================================================
+
+Each of you will be working with 2 of the demultiplexed file pairs. For all steps below, process the two libraries separately. Library assignments are here: `/projects/bgmp/Bi624/PS1_file_assignments.tsv`
+
+- Opening that TSV file told me that I have thsese two libraries: `3_2B_control` and `16_3D_mbnl`
+
+The demultiplexed .fastq files are here: `/projects/bgmp/2017_sequencing/demultiplexed/`
+
+- Created directory for this problem set's files: `mkdir /home/sclaridg/bi624/ps1`
+- Created symbolic links to my files:
+```
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R1_001.fastq.gz 3_2B_control_R1.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R2_001.fastq.gz 3_2B_control_R2.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R1_001.fastq.gz 16_3D_mbnl_R1.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R2_001.fastq.gz 16_3D_mbnl_R2.fastq.gz
+```
+
+- Loaded modules for running FastQC:
+```
+ml easybuild intel/2017a FastQC
+```
+
+- Checked the FastQC version:
+```
+$ fastqc --version
+FastQC v0.11.5
+```
+
+Part 1 – SF-Seq read quality score distributions
+================================================================================
+
+1. *Using `FastQC` on Talapas, produce plots of quality score distributions for forward and reverse reads. Also, produce plots of the per-base N content, and comment on whether or not they are consistent with the quality score plots.*
+
+- Submitted `fastqc.srun` script to run FastQC 
+- Copied all of the FastQC output files from Talapas to my local directory:
+```
+scp hpc1:/home/sclaridg/bi624/ps1/fastqc_out/* .
+```
+
+- Manually opened the zipped files to access the PNG files with the quality score distributions and per-base N content plots
+- Here are the per-base quality and N content plots from FastQC for the forward and reverse reads of my two libraries:
+
+**Per-Base Sequence Quality Plots**
+
+![Per-Base Quality for 16_3D_mbnl_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R1_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 16_3D_mbnl_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R2_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 3_2B_control_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R1_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 3_2B_control_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R2_fastqc/images/per_base_quality.png)
+
+**Per-Base N Content Plots**
+
+![Per-Base N Content for 16_3D_mbnl_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R1_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 16_3D_mbnl_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R2_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 3_2B_control_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R1_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 3_2B_control_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R2_fastqc/images/per_base_n_content.png)
+
+The per-base N content plots are consistent with the quality score plots in that there are no Ns present in the highest quality regions of each library. Additionally, we see that a small percentage of bases are Ns at the beginning of the reads, which corresponds with the lower mean quality indicated in the quality plots.
+
+2. *Run your quality score plotting script from the index hopping assignment. Describe how the `FastQC` quality score distribution plots compare to your own. If different, propose an explanation. Also, does the runtime differ? If so, why?*
+
+- Submitted `stats.srun` script to run my stats script (`stats.py`) on all of my files
+    - Temporarily copied over all of my FASTQ files to unzip them because I couldn't get the `gzip` function to work in my script from the index hopping assignment
+    - Removed these files afterward to clean up my directory
+```
+cp /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R*_001.fastq.gz .
+cp /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R*_001.fastq.gz .
+
+gunzip 3_2B_control_S3_L008_R*_001.fastq.gz
+gunzip 16_3D_mbnl_S12_L008_R*_001.fastq.gz
+```
+
+- Copied all of the `stats.py` output files from Talapas to my local directory:
+```
+scp hpc1:/home/sclaridg/bi624/ps1/*tsv .
+```
+
+**Plots**
+
+Read in per-base quality score TSV files:
+```{r}
+bp_16_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R1.tsv", header = TRUE, sep = "\t")
+bp_16_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R2.tsv", header = TRUE, sep = "\t")
+bp_3_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R1.tsv", header = TRUE, sep = "\t")
+bp_3_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R2.tsv", header = TRUE, sep = "\t")
+```
+
+Make plot for per-base quality for 16_3D_mbnl_R1:
+```{r}
+plot(bp_16_R1,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     main = "Per-Base Quality for 16_3D_mbnl_R1 (forward)")
+```
+
+Make plot for per-base quality for 16_3D_mbnl_R2:
+```{r}
+plot(bp_16_R2,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     main = "Per-Base Quality for 16_3D_mbnl_R2 (reverse)")
+```
+
+Make plot for per-base quality for 3_2B_control_R1:
+```{r}
+plot(bp_3_R1,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     main = "Per-Base Quality for 3_2B_control_R1 (forward)")
+```
+
+Make plot for per-base quality for 3_2B_control_R2:
+```{r}
+plot(bp_3_R2,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     main = "Per-Base Quality for 3_2B_control_R2 (forward)")
+```
+
+The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
+
+The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. **WHY**
+
+Part 2 – Adaptor trimming comparison
+================================================================================
+
+3. Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed? 
+    - *Sanity check*: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.
+  
+4. Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.
+
+5. Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.
+  
+Part 3 – rRNA reads and strand-specificity
+================================================================================
+
+6. Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.
+
+7. Demonstrate convincingly that the SF-Seq data are from “strand-specific” RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.
+
+
+To turn in your work for this assignment
+================================================================================
+Please upload your Talapas batch script/code, FastQC plots, answers to questions, and any additional plots/code to github. 
