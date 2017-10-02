@@ -73,6 +73,9 @@ scp hpc1:/home/sclaridg/bi624/ps1/fastqc_out/* .
 
 The per-base N content plots are consistent with the quality score plots in that there are no Ns present in the highest quality regions of each library. Additionally, we see that a small percentage of bases are Ns at the beginning of the reads, which corresponds with the lower mean quality indicated in the quality plots.
 
+
+
+
 2. *Run your quality score plotting script from the index hopping assignment. Describe how the `FastQC` quality score distribution plots compare to your own. If different, propose an explanation. Also, does the runtime differ? If so, why?*
 
 - Submitted `stats.srun` script to run my stats script (`stats.py`) on all of my files
@@ -94,48 +97,49 @@ scp hpc1:/home/sclaridg/bi624/ps1/*tsv .
 
 **Plots**
 
-Read in per-base quality score TSV files:
-```{r}
+```{r, fig.height=8, fig.width=10, echo = FALSE}
+# Read in per-base quality score TSV files
 bp_16_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R1.tsv", header = TRUE, sep = "\t")
 bp_16_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R2.tsv", header = TRUE, sep = "\t")
 bp_3_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R1.tsv", header = TRUE, sep = "\t")
 bp_3_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R2.tsv", header = TRUE, sep = "\t")
-```
 
-Make plot for per-base quality for 16_3D_mbnl_R1:
-```{r}
+# Make per-base quality plots
+par(oma=c(0,0,2,0))
+par(mfrow = c(2, 2))
 plot(bp_16_R1,
      ylim = c(0, 41),
      ylab = "Mean Quality Score",
      xlab = "Position in Read (bp)",
-     main = "Per-Base Quality for 16_3D_mbnl_R1 (forward)")
-```
-
-Make plot for per-base quality for 16_3D_mbnl_R2:
-```{r}
+     pch = 19,
+     cex = 0.5,
+     col = "mediumpurple1",
+     main = "16_3D_mbnl_R1 (forward)")
 plot(bp_16_R2,
      ylim = c(0, 41),
      ylab = "Mean Quality Score",
      xlab = "Position in Read (bp)",
-     main = "Per-Base Quality for 16_3D_mbnl_R2 (reverse)")
-```
-
-Make plot for per-base quality for 3_2B_control_R1:
-```{r}
+     pch = 19,
+     cex = 0.5,
+     col = "mediumpurple3",
+     main = "16_3D_mbnl_R2 (reverse)")
 plot(bp_3_R1,
      ylim = c(0, 41),
      ylab = "Mean Quality Score",
      xlab = "Position in Read (bp)",
-     main = "Per-Base Quality for 3_2B_control_R1 (forward)")
-```
-
-Make plot for per-base quality for 3_2B_control_R2:
-```{r}
+     pch = 19,
+     cex = 0.5,
+     col = "paleturquoise3",
+     main = "3_2B_control_R1 (forward)")
 plot(bp_3_R2,
      ylim = c(0, 41),
      ylab = "Mean Quality Score",
      xlab = "Position in Read (bp)",
-     main = "Per-Base Quality for 3_2B_control_R2 (forward)")
+     pch = 19,
+     cex = 0.5,
+     col = "paleturquoise4",
+     main = "3_2B_control_R2 (forward)")
+title(main = "Per-Base Sequence Quality from stats.py", outer = TRUE)
 ```
 
 The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
@@ -159,6 +163,7 @@ Part 2 – Adaptor trimming comparison
     - Takes only a single file
     - Can only do 3' or 5' adapters, not both, in a single command
     - Barcode is declared as a flag in the command
+    - Default setting is to allow 10% error rate
 - `process_shortreads`: 
     - Can take both the forward and reverse reads simultaneously
     - Has quality filtering for dropping reads with uncalled bases or low quality scores
@@ -168,30 +173,18 @@ Part 2 – Adaptor trimming comparison
     - Has options for numerous quality filters and trimming settings
     - Requires a FASTA file containing your adapters with certain flags dictating how they should be used
 
-**`Trimmomatic`**
-
-- To run `Trimmomatic`, I had to make the FASTA file, which I named `indices.fasta` and contined the following information:
-```
->index1
-ACGATCAG
->index2
-CTGATCGT
-```
-- I submitted the `trimmomatic.srun` slurm script to run `Trimmomatic` on both libraries, one after the other
-- I used the example `ILLUMINACLIP:<fastaWithAdaptersEtc>:2:30:10` settings:
-    - Maximum of 2 mismatches in the adapter to occur, which will still allow a full match
-    - 30 specifies how accurate the match between the two 'adapter ligated' reads must be for PE palindrome read alignment (from [documentation](http://www.usadellab.org/cms/?page=trimmomatic))
-        - I did not include palindrome trimming flags in my FASTA file, so this is unnecessary other than a placeholder
-    - 10 specifies how accurate the match between any adapter etc. sequence must be against a read (from [documentation](http://www.usadellab.org/cms/?page=trimmomatic))
-
 **`cutadapt`**
 
-- For the sake of comparison, I also tried using `cutadapt` to trim the reads (see `cutadapt.srun` slurm script)
-
+- I tried using `cutadapt` to trim the reads (see `cutadapt.srun` slurm script)
+- These are the adapters:
+    - Forward adapter: `AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC`
+    - Reverse adapter: `AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`
 
 *Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.*
 
-- I determined the total number of reads in each file:
+- I determined the total number of lines in each file and divided by 4 to get the readcounts:
+    - 16_3D_mbnl has 8,235,197 reads
+    - 3_2B_control has 6,873,509 reads
 
 ```
 $ zcat 16_3D_mbnl_R1.fastq.gz | wc -l
@@ -202,18 +195,23 @@ $ zcat 3_2B_control_R1.fastq.gz | wc -l
 
 - Using the following command skeleton, I determined how many sequences in each file contained the adapter:
 ```
-zcat <file_name> | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | grep "<index_sequence>" | wc -l
+zcat <file_name> | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | grep "<adapter_sequence>" | wc -l
 ```
 
-- Here is a table of the results of the code right above:
+- Here is a table of the results of the code above:
 ```{r, echo = FALSE}
 # Make vectors
-Library <- c(rep("16_3D_mbnl", 4), rep("3_2B_control", 4))
-Read <- rep(c("Forward", "Reverse"), 4)
-Index <- c("ACGATCAG", "ACGATCAG", "CTGATCGT", "CTGATCGT", "ACGATCAG", "ACGATCAG", "CTGATCGT", "CTGATCGT")
-Readcount <- c("75,570", "5,978", "5,043", "80,984", "2,696", "15,320", "16,715", "2,946")
+libraries <- c(rep("16_3D_mbnl", 4), rep("3_2B_control", 4))
+reads <- rep(c("R1", "R2"), 4)
+adaptors <- rep(c("Forward", "Forward", "Reverse", "Reverse"), 2)
+readcounts <- c(106349, 0, 0, 115921, 7056, 0, 0, 8157)
+total_reads <- c(rep(8235197, 4), rep(6873509, 4))
+percentages <- round((readcounts / total_reads) * 100, 2)
+
 # Make data frame
-adapter_data <- data.frame(Library, Read, Index, Readcount)
+adapter_data <- data.frame(libraries, reads, adaptors, readcounts, total_reads, percentages)
+colnames(adapter_data) <- c("Library", "Read", "Adaptor", "Readcount Containing Adaptor", "Total Reads in Library", "Percent Containing Adapter")
+
 # Make table
 knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries that Contain Index Sequences")
 ```
@@ -222,39 +220,44 @@ knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries
 
 4. *Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.*
 
-- I used UNIX commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data: **EDIT THIS AHHHHH**
+- I used UNIX commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data:
 ```
-$ cat SscoPEclean_R1.fastq | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > r1_length_distribution.txt
-$ cat SscoPEclean_R2.fastq | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > r2_length_distribution.txt
+zcat 16_3D_mbnl_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R1_dist.txt
+
+zcat 16_3D_mbnl_R2.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R2_dist.txt
+
+zcat 3_2B_control_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 3_2B_control_R1_dist.txt
+
+zcat 3_2B_control_R2.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 3_2B_control_R2_dist.txt
 ```
 
-- I copied the distribution files to my local machine:**EDIT THIS AHHHHH**
+- I copied the distribution files to my local machine:
 ```
-$ scp hpc1:/home/sclaridg/bi623/assignment5/*txt .
+scp hpc1:/home/sclaridg/bi624/ps1/cutadapt_out/*txt .
 ```
 
-- The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R.
+- The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R
 - Here are the plots for the 16_3D_mbnl library: **EDIT THIS AHHHHH**
-```{r Length Dist 16_3D_mbnl, fig.height=4, fig.width=6}
+```{r Length Dist 16_3D_mbnl, fig.height=4, fig.width=6, eval = FALSE}
 # Read in the data tables
-r1 <- read.table("./r1_length_distribution.txt", sep = " ")
-r2 <- read.table("./r2_length_distribution.txt", sep = " ")
+mbnl_R1 <- read.table("./cutadapt_out/16_3D_mbnl_R1_dist.txt", sep = " ")
+mbnl_R2 <- read.table("./cutadapt_out/16_3D_mbnl_R2_dist.txt", sep = " ")
 
 # Plot the R1 distribution
-plot(r1$V2, log10(r1$V1),
-     main = "Read Length Distribution for Cleaned Reads\nfrom the Gulf Pipefish Male Brood Pouch",
+plot(mbnl_R1$V2, log10(mbnl_R1$V1),
+     main = "Read Length Distribution for Trimmed Reads\nfrom the SF-Seq 16_3D_mbnl Library",
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 25,
      bg = "mediumpurple1")
 # Plot the R2 distribution
-points(r2$V2, log10(r2$V1),
+points(mbnl_R2$V2, log10(mbnl_R2$V1),
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 24,
      bg = "turquoise")
 legend("topleft",
-       c("Cleaned R1 Reads", "Cleaned R2 Reads"),
+       c("Trimmed R1 Reads", "Trimmed R2 Reads"),
        pch = c(25, 24),
        pt.bg = c("mediumpurple1", "turquoise"),
        bty = "n",
@@ -263,26 +266,26 @@ legend("topleft",
 ```
 
 - Here are the plots for the 3_2B_control library: **EDIT THIS AHHHHH**
-```{r Length Dist 3_2B_control, fig.height=4, fig.width=6}
+```{r Length Dist 3_2B_control, fig.height=4, fig.width=6, eval = FALSE}
 # Read in the data tables
-r1 <- read.table("./r1_length_distribution.txt", sep = " ")
-r2 <- read.table("./r2_length_distribution.txt", sep = " ")
+control_R1 <- read.table("./cutadapt_out/3_2B_control_R1_dist.txt", sep = " ")
+control_R2 <- read.table("./cutadapt_out/3_2B_control_R2_dist.txt", sep = " ")
 
 # Plot the R1 distribution
-plot(r1$V2, log10(r1$V1),
-     main = "Read Length Distribution for Cleaned Reads\nfrom the Gulf Pipefish Male Brood Pouch",
+plot(control_R1$V2, log10(control_R1$V1),
+     main = "Read Length Distribution for Trimmed Reads\nfrom the SF-Seq 3_2B_control Library",
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 25,
      bg = "mediumpurple1")
 # Plot the R2 distribution
-points(r2$V2, log10(r2$V1),
+points(control_R2$V2, log10(control_R2$V1),
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 24,
      bg = "turquoise")
 legend("topleft",
-       c("Cleaned R1 Reads", "Cleaned R2 Reads"),
+       c("Trimmed R1 Reads", "Trimmed R2 Reads"),
        pch = c(25, 24),
        pt.bg = c("mediumpurple1", "turquoise"),
        bty = "n",

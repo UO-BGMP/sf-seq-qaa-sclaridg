@@ -10,20 +10,16 @@
 #SBATCH --mail-type=ALL
 
 # Load modules
-easybuild ifort/2017.1.132-GCC-6.3.0-2.27 impi/2017.1.132
+ml easybuild ifort/2017.1.132-GCC-6.3.0-2.27 impi/2017.1.132
 ml cutadapt/1.14-Python-2.7.13
 ml list
 
 dir=/home/sclaridg/bi624/ps1/
 
 # Run cutadapt on 16_3D_mbnl library
-cutadapt -g ACGATCAG...CTGATCGT -o $dir/cutadapt_out/out_16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R1.fastq.gz
-
-cutadapt -g ACGATCAG...CTGATCGT -o $dir/cutadapt_out/out_16_3D_mbnl_R2.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o $dir/cutadapt_out/16_3D_mbnl_R1.out.fastq.gz -p $dir/cutadapt_out/16_3D_mbnl_R2.out.fastq.gz $dir/16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz
 
 # Run cutadapt on 3_2B_control library
-cutadapt -g ACGATCAG...CTGATCGT -o $dir/cutadapt_out/out_3_2B_control_R1.fastq.gz $dir/3_2B_control_R1.fastq.gz
-
-cutadapt -g ACGATCAG...CTGATCGT -o $dir/cutadapt_out/out_3_2B_control_R2.fastq.gz $dir/3_2B_control_R2.fastq.gz
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o $dir/cutadapt_out/3_2B_control_R1.out.fastq.gz -p $dir/cutadapt_out/3_2B_control_R2.out.fastq.gz $dir/3_2B_control_R1.fastq.gz $dir/3_2B_control_R2.fastq.gz
 
 exit

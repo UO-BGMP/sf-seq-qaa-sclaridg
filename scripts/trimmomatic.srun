@@ -16,9 +16,9 @@ ml list
 dir=/home/sclaridg/bi624/ps1/
 
 # Run Trimmomatic on 16_3D_mbnl library
-java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz $dir/out_16_3D_mbnl_R1_paired.fq.gz $dir/out_16_3D_mbnl_R1_unpaired.fq.gz $dir/out_16_3D_mbnl_R2_paired.fq.gz $dir/out_16_3D_mbnl_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices.fasta:2:30:10
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz $dir/trimmomatic_out/out_16_3D_mbnl_R1_paired.fq.gz $dir/trimmomatic_out/out_16_3D_mbnl_R1_unpaired.fq.gz $dir/trimmomatic_out/out_16_3D_mbnl_R2_paired.fq.gz $dir/trimmomatic_out/out_16_3D_mbnl_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices_16_3D_mbnl.fa:2:30:10
 
 # Run Trimmomatic on 3_2B_control library
-java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/3_2B_control_R1.fastq.gz $dir/3_2B_control_R2.fastq.gz $dir/out_3_2B_control_R1_paired.fq.gz $dir/out_3_2B_control_R1_unpaired.fq.gz $dir/out_3_2B_control_R2_paired.fq.gz $dir/out_3_2B_control_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices.fasta:2:30:10
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar PE --phred33 $dir/3_2B_control_R1.fastq.gz $dir/3_2B_control_R2.fastq.gz $dir/trimmomatic_out/out_3_2B_control_R1_paired.fq.gz $dir/trimmomatic_out/out_3_2B_control_R1_unpaired.fq.gz $dir/trimmomatic_out/out_3_2B_control_R2_paired.fq.gz $dir/trimmomatic_out/out_3_2B_control_R2_unpaired.fq.gz ILLUMINACLIP:$dir/indices_3_2B_control.fa:2:30:10
 
 exit
