@@ -160,14 +160,14 @@ Part 2 – Adaptor trimming comparison
 **Differences**
 
 - `cutadapt`:
-    - Takes only a single file
-    - Can only do 3' or 5' adapters, not both, in a single command
-    - Barcode is declared as a flag in the command
+    - Can take both the forward and reverse reads simultaneously
+    - Adaptor sequence is declared as a flag in the command
     - Default setting is to allow 10% error rate
+    - N-tolerant
 - `process_shortreads`: 
     - Can take both the forward and reverse reads simultaneously
     - Has quality filtering for dropping reads with uncalled bases or low quality scores
-    - Requires a list of barcodes
+    - Requires a list of barcodes/adaptors
 - `Trimmomatic`: 
     - Can take both the forward and reverse reads simultaneously
     - Has options for numerous quality filters and trimming settings
@@ -177,15 +177,23 @@ Part 2 – Adaptor trimming comparison
 
 - I tried using `cutadapt` to trim the reads (see `cutadapt.srun` slurm script)
 - These are the adapters:
-    - Forward adapter: `AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC`
-    - Reverse adapter: `AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`
-
+    - **Forward adapter**: `AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC`
+    - **Reverse adapter**: `AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`
+- In the `.out` file for `cutadapt`, there are some statistics on how many reads contained the adaptor sequences:
+    - 16_3D_mbnl library:
+          - Read 1 with adapter: 1,002,960 (12.2%)
+          - Read 2 with adapter: 1,069,893 (13.0%)
+    - 3_2B_control library:
+          - Read 1 with adapter: 219,474 (3.2%)
+          - Read 2 with adapter: 268,119 (3.9%)
+          
+          
+          
 *Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.*
 
 - I determined the total number of lines in each file and divided by 4 to get the readcounts:
     - 16_3D_mbnl has 8,235,197 reads
     - 3_2B_control has 6,873,509 reads
-
 ```
 $ zcat 16_3D_mbnl_R1.fastq.gz | wc -l
 32940788
@@ -216,11 +224,15 @@ colnames(adapter_data) <- c("Library", "Read", "Adaptor", "Readcount Containing 
 knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries that Contain Index Sequences")
 ```
 
+These percentages are much lower than those produced by `cutadapt`. Since `grep` looks for exact matches, the percentages in the table are only for reads that contained the entire adaptor sequence. `cutadapt` looks for and trims partial adapter sequences as well, so there should be many more sequences trimmed with `cutadapt` than found with `grep`.
+
+
 
 
 4. *Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.*
 
 - I used UNIX commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data:
+
 ```
 zcat 16_3D_mbnl_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R1_dist.txt
 
@@ -237,15 +249,18 @@ scp hpc1:/home/sclaridg/bi624/ps1/cutadapt_out/*txt .
 ```
 
 - The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R
-- Here are the plots for the 16_3D_mbnl library: **EDIT THIS AHHHHH**
-```{r Length Dist 16_3D_mbnl, fig.height=4, fig.width=6, eval = FALSE}
+- Here are the read length distributions for both libraries:
+```{r Length Dists, fig.height=4, fig.width=6, echo = FALSE}
+par(oma=c(0,0,2,0))
+par(mfrow = c(1, 2))
+
+### 16_3D_mbnl library
 # Read in the data tables
 mbnl_R1 <- read.table("./cutadapt_out/16_3D_mbnl_R1_dist.txt", sep = " ")
 mbnl_R2 <- read.table("./cutadapt_out/16_3D_mbnl_R2_dist.txt", sep = " ")
-
 # Plot the R1 distribution
 plot(mbnl_R1$V2, log10(mbnl_R1$V1),
-     main = "Read Length Distribution for Trimmed Reads\nfrom the SF-Seq 16_3D_mbnl Library",
+     main = "16_3D_mbnl Library",
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 25,
@@ -263,17 +278,14 @@ legend("topleft",
        bty = "n",
        cex = 0.8,
        xjust = 1)
-```
 
-- Here are the plots for the 3_2B_control library: **EDIT THIS AHHHHH**
-```{r Length Dist 3_2B_control, fig.height=4, fig.width=6, eval = FALSE}
+### 3_2B_control library
 # Read in the data tables
 control_R1 <- read.table("./cutadapt_out/3_2B_control_R1_dist.txt", sep = " ")
 control_R2 <- read.table("./cutadapt_out/3_2B_control_R2_dist.txt", sep = " ")
-
 # Plot the R1 distribution
 plot(control_R1$V2, log10(control_R1$V1),
-     main = "Read Length Distribution for Trimmed Reads\nfrom the SF-Seq 3_2B_control Library",
+     main = "3_2B_control Library",
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
      pch = 25,
@@ -291,7 +303,11 @@ legend("topleft",
        bty = "n",
        cex = 0.8,
        xjust = 1)
+
+title(main = "Read Length Distribution for Trimmed Reads from Two SF-Seq Libraries", outer = TRUE)
 ```
+
+
 
 5. *Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.*
   
