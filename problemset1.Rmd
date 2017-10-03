@@ -71,7 +71,7 @@ scp hpc1:/home/sclaridg/bi624/ps1/fastqc_out/* .
 
 ![Per-Base N Content for 3_2B_control_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R2_fastqc/images/per_base_n_content.png)
 
-The per-base N content plots are consistent with the quality score plots in that there are no Ns present in the highest quality regions of each library. Additionally, we see that a small percentage of bases are Ns at the beginning of the reads, which corresponds with the lower mean quality indicated in the quality plots.
+- The per-base N content plots are consistent with the quality score plots in that there are no Ns present in the highest quality regions of each library. Additionally, we see that a small percentage of bases are Ns at the beginning of the reads, which corresponds with the lower mean quality indicated in the quality plots.
 
 
 
@@ -142,12 +142,8 @@ plot(bp_3_R2,
 title(main = "Per-Base Sequence Quality from stats.py", outer = TRUE)
 ```
 
-The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
-
-The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. The difference in run time could potentially be due to the utility of the languages used. My code was written in Python, whereas FastQC was written in Java.
-
-**WHY**
-
+- The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
+- The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. The difference in run time (outside of multi-threading) could potentially be due to the utility of the languages used. My code was written in Python, whereas FastQC was written in Java. There could be a functional difference between the two languages. Additionally, since I am a relatively new coder, I may have written my `stats.py` program in a more roundabout or "clunky" way than FastQC was written.
 
 
 
@@ -224,14 +220,13 @@ colnames(adapter_data) <- c("Library", "Read", "Adaptor", "Readcount Containing 
 knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries that Contain Index Sequences")
 ```
 
-These percentages are much lower than those produced by `cutadapt`. Since `grep` looks for exact matches, the percentages in the table are only for reads that contained the entire adaptor sequence. `cutadapt` looks for and trims partial adapter sequences as well, so there should be many more sequences trimmed with `cutadapt` than found with `grep`.
-
+- These percentages are much lower than those produced by `cutadapt`. Since `grep` looks for exact matches, the percentages in the table are only for reads that contained the entire adaptor sequence. `cutadapt` looks for and trims partial adapter sequences as well, so there should be many more sequences trimmed with `cutadapt` than found with `grep`. There were zero hits when the forward reads were grepped for the reverse adaptor and when the reverse reads were grepped for the forward adaptor. Conversely, when forward reads were grepped for forward adaptor and reverse for reverse, my grepping returned matches. This verifies the adaptor sequence orientation I expected. 
 
 
 
 4. *Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.*
 
-- I used UNIX commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data:
+- I used Unix commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data:
 
 ```
 zcat 16_3D_mbnl_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R1_dist.txt
@@ -250,7 +245,7 @@ scp hpc1:/home/sclaridg/bi624/ps1/cutadapt_out/*txt .
 
 - The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R
 - Here are the read length distributions for both libraries:
-```{r Length Dists, fig.height=4, fig.width=6, echo = FALSE}
+```{r Length Dists, fig.height=7, fig.width=10, echo = FALSE}
 par(oma=c(0,0,2,0))
 par(mfrow = c(1, 2))
 
@@ -269,12 +264,13 @@ plot(mbnl_R1$V2, log10(mbnl_R1$V1),
 points(mbnl_R2$V2, log10(mbnl_R2$V1),
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
-     pch = 24,
-     bg = "turquoise")
+     pch = 3,
+     col = "turquoise")
 legend("topleft",
        c("Trimmed R1 Reads", "Trimmed R2 Reads"),
-       pch = c(25, 24),
+       pch = c(25, 3),
        pt.bg = c("mediumpurple1", "turquoise"),
+       col = c("black", "turquoise"),
        bty = "n",
        cex = 0.8,
        xjust = 1)
@@ -294,23 +290,25 @@ plot(control_R1$V2, log10(control_R1$V1),
 points(control_R2$V2, log10(control_R2$V1),
      xlab = "Length (bp)",
      ylab = "log10(Frequency)",
-     pch = 24,
-     bg = "turquoise")
+     pch = 3,
+     col = "turquoise")
 legend("topleft",
        c("Trimmed R1 Reads", "Trimmed R2 Reads"),
-       pch = c(25, 24),
+       pch = c(25, 3),
        pt.bg = c("mediumpurple1", "turquoise"),
+       col = c("black", "turquoise"),
        bty = "n",
        cex = 0.8,
        xjust = 1)
 
-title(main = "Read Length Distribution for Trimmed Reads from Two SF-Seq Libraries", outer = TRUE)
+title(main = "Read Length Distribution for Trimmed Reads\nfrom Two SF-Seq Libraries", outer = TRUE)
 ```
 
 
 
 5. *Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.*
   
+- From the fragment analyzer, if the average fragment size is small, then we would expect a larger proportion of reads to contain adapter since there would be a greater likelihood of sequencing through the insert and into the adapter. The fragment analyzer traces of all of the libraries that were sequenced (including my two) have median sizes in the range of 300-500 bp. Since these medians are relatively large, and right shifted from the ~240-bp expectation if our insert sizes were 100 bp, we would expect a small proportion of our reads to be trimmed. My percentages of reads that were trimmed are relatively low, with the 16_3D_mbnl library having percentages of 12.2% and 13.0%, and the 3_2B_control library with 3.2% and 3.9%. The average fragment size for the 16_3D_mbnl library was 279 bp, so it makes sense that a greater percentage of reads were trimmed for that library.
 
 
 
@@ -318,13 +316,94 @@ title(main = "Read Length Distribution for Trimmed Reads from Two SF-Seq Librari
 Part 3 – rRNA reads and strand-specificity
 ================================================================================
 
-6. Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.
+6. *Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.*
+
+- I used the Rfam database to find the rRNA sequences
+- I searched for "Mus musculus" and filtered the results for rRNA and manually looked through around all of the 319 sequence results and identified the four Rfam accession numbers that matched with these sequences: RF00001, RF00002, RF01960, and RF02543
+- I got these FASTA files from the FTP server using `wget ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/fasta_files/<file_name>`, and then grepped for "Mus musculus", which gave me all the header lines containing my species of interest
+    - I used `wc- -l` to determine how many sequences were represented in all three files
+        - `RF00001.fa.gz` had 190 sequences
+        - `RF00002.fa.gz` had 2 sequences
+        - `RF01960.fa.gz` had 24 sequences
+        - `RF02543.fa.gz` had 98 sequences
+        - This resulted in 314 sequences, which I felt was sufficient for this analysis, since 3 bacterial and 1 archaeal sequences showed up in my "Mus musculus" search (these were not included in my rRNA database for GSNAP)
+        - This yields 1 missing sequence from the 319 search results, which I felt was okay to leave out
+- I then combined these four FASTA files containing rRNA sequences from Rfam into one FASTA file called `mus_musculus_rrna.fasta` to feed into `gmap_build`:
+
+```
+# Compile entries
+zcat RF00001.fa.gz | grep -A 1 "Mus musculus" > mus_musculus_rrna_a.fasta
+zcat RF00002.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+zcat RF01960.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+zcat RF02543.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+
+# Remove "--" lines (artifacts from grepping)
+grep -v "^--$" mus_musculus_rrna_a.fasta > mus_musculus_rrna.fasta 
+```
+
+- Loaded GMAP/GSNAP:
+```
+ml GMAP-GSNAP/2017-06-20
+```
+
+- Built a GMAP database called `mus_musculus`:
+```
+gmap_build -D /home/sclaridg/bi624/ps1 -d mus_musculus mus_musculus_rrna.fasta
+```
+
+- Submitted my `gsnap.srun` slurm script to run GSNAP on both of my libraries
+    - I used the `--no-sam-headers` to preclude the addition of `@` lines from the top of all of my SAM files
+    - I used the `--split-output` flag in my GSNAP command, which resulted in multiple output SAM files for each library:
+        - `nomapping`: reads that could not be aligned
+        - `paired_uniq_inv`: both paired-end reads could be aligned uniquely, but indicate an inversion between them
+        - `paired_uniq_long`: both paired-end reads could be aligned uniquely, but indicate a large deletion between them
+        - `paired_uniq_src`: both paired-end reads could be aligned uniquely, but indicate a scramble (genomic order is mixed up)
+        - `paired_mult`: both paired-end reads could be aligned near each other, representing an inversion, scramble, or deletion, but there are multiple alignments
+        - `concordant_uniq`: both paired-end reads could be aligned to exactly 1 location
+        - `concordant_mult`: both paired-end reads could be aligned to >1 locations
+        - `halfmapping_uniq`, `halfmapping_mult`: same as concordant except only one of the paired reads aligned
+        - `unpaired_uniq`, `unpaired_mult`: same as concordant except the two reads could not be paired
+- If I count the number of reads in the `nomapping` output file and divide that number by the number of reads that were fed to GSNAP (i.e. # of R1 reads + # of R2 reads), I will get out the proportion of total reads that did not to the rRNA database:
+    - **16_3D_mbnl** has 8,235,197 reads, for a total of 16,470,394 reads fed into GSNAP
+        - Using `wc -l`, I determined there were 16,429,324 reads in the `nomapping` file for this library, which corresponds to 99.75%:
+$$ \frac{16,429,324\ no-mapping\ reads}{16,470,394\ total\ reads}* 100 = 99.75\% $$
+        - Thus, it so follows that $$ 100 - 99.75 = 0.25\% $$ 0.25% of reads in this library map to the rRNA database
+    - **3_2B_control** has 6,873,509 reads for a total of 13,747,018 reads fed into GSNAP
+        - There were 12,772,250 reads in the `nomapping` file for this library, which corresponds to 92.91%:
+$$ \frac{12,772,250\ no-mapping\ reads}{13,747,018\ total\ reads}* 100 = 92.91\% $$
+        - Thus, it so follows that $$ 100 - 92.91 = 7.09\% $$ 7.09% of reads in this library map to the rRNA database
 
 
+7. *Demonstrate convincingly that the SF-Seq data are from "strand-specific" RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.*
 
-7. Demonstrate convincingly that the SF-Seq data are from “strand-specific” RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.
+- If the libraries are strand-sepcific, then there should be an abundance of poly-A tails represented in the reads over poly-Ts because we did am mRNA capture step during library preps
+- Assuming that the poly-A tails only show up at the end of the reads, I can dictate that the poly-A sequence had to be at the end using the `$` when grepping, though this assumption will underestimate the number of reads that contain pieces of poly-A tails
 
+For R1:
+```
+zcat 16_3D_mbnl_R1.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+307
+zcat 16_3D_mbnl_R1.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+497
 
+zcat 3_2B_control_R1.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+178
+zcat 3_2B_control_R1.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+3655
+```
+
+For R2:
+```
+zcat 16_3D_mbnl_R2.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+917
+zcat 16_3D_mbnl_R2.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+797
+
+zcat 3_2B_control_R2.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+1784
+zcat 3_2B_control_R2.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+623
+```
 
 
 
