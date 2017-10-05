@@ -1,0 +1,473 @@
+---
+title: "Problem Set 1: SF-Seq Quality Assessment Assignment"
+subtitle: "BI 624, Fall 2017"
+author: "Sally Claridge"
+date: "27 September 2017"
+output: html_document
+---
+
+The objectives of this assignment are to use existing tools for quality assessment and adaptor trimming, compare the quality assessments to those from your own software, and demonstrate your ability to summarize other important information about this RNA-Seq data set.
+
+Data
+================================================================================
+
+Each of you will be working with 2 of the demultiplexed file pairs. For all steps below, process the two libraries separately. Library assignments are here: `/projects/bgmp/Bi624/PS1_file_assignments.tsv`
+
+- Opening that TSV file told me that I have thsese two libraries: `3_2B_control` and `16_3D_mbnl`
+
+The demultiplexed .fastq files are here: `/projects/bgmp/2017_sequencing/demultiplexed/`
+
+- Created directory for this problem set's files: `mkdir /home/sclaridg/bi624/ps1`
+- Created symbolic links to my files:
+```
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R1_001.fastq.gz 3_2B_control_R1.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R2_001.fastq.gz 3_2B_control_R2.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R1_001.fastq.gz 16_3D_mbnl_R1.fastq.gz
+ln -s /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R2_001.fastq.gz 16_3D_mbnl_R2.fastq.gz
+```
+
+- Loaded modules for running FastQC:
+```
+ml easybuild intel/2017a FastQC
+```
+
+- Checked the FastQC version:
+```
+$ fastqc --version
+FastQC v0.11.5
+```
+
+Part 1 – SF-Seq read quality score distributions
+================================================================================
+
+1. *Using `FastQC` on Talapas, produce plots of quality score distributions for forward and reverse reads. Also, produce plots of the per-base N content, and comment on whether or not they are consistent with the quality score plots.*
+
+- Submitted `fastqc.srun` script to run FastQC 
+- Copied all of the FastQC output files from Talapas to my local directory:
+```
+scp hpc1:/home/sclaridg/bi624/ps1/fastqc_out/* .
+```
+
+- Manually opened the zipped files to access the PNG files with the quality score distributions and per-base N content plots
+- Here are the per-base quality and N content plots from FastQC for the forward and reverse reads of my two libraries:
+
+**Per-Base Sequence Quality Plots**
+
+![Per-Base Quality for 16_3D_mbnl_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R1_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 16_3D_mbnl_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R2_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 3_2B_control_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R1_fastqc/images/per_base_quality.png)
+
+![Per-Base Quality for 3_2B_control_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R2_fastqc/images/per_base_quality.png)
+
+**Per-Base N Content Plots**
+
+![Per-Base N Content for 16_3D_mbnl_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R1_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 16_3D_mbnl_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/16_3D_mbnl_R2_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 3_2B_control_R1 (forward)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R1_fastqc/images/per_base_n_content.png)
+
+![Per-Base N Content for 3_2B_control_R2 (reverse)](/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/fastqc_out/3_2B_control_R2_fastqc/images/per_base_n_content.png)
+
+- The per-base N content plots are consistent with the quality score plots in that there are no Ns present in the highest quality regions of each library. Additionally, we see that a small percentage of bases are Ns at the beginning of the reads, which corresponds with the lower mean quality indicated in the quality plots.
+
+
+
+
+2. *Run your quality score plotting script from the index hopping assignment. Describe how the `FastQC` quality score distribution plots compare to your own. If different, propose an explanation. Also, does the runtime differ? If so, why?*
+
+- Submitted `stats.srun` script to run my stats script (`stats.py`) on all of my files
+- Temporarily copied over all of my FASTQ files to unzip them because I couldn't get the `gzip` function to work in my script from the index hopping assignment
+- Removed these files afterward to clean up my directory
+
+```
+cp /projects/bgmp/2017_sequencing/demultiplexed/3_2B_control_S3_L008_R*_001.fastq.gz .
+cp /projects/bgmp/2017_sequencing/demultiplexed/16_3D_mbnl_S12_L008_R*_001.fastq.gz .
+
+gunzip 3_2B_control_S3_L008_R*_001.fastq.gz
+gunzip 16_3D_mbnl_S12_L008_R*_001.fastq.gz
+```
+
+- Copied all of the `stats.py` output files from Talapas to my local directory:
+```
+scp hpc1:/home/sclaridg/bi624/ps1/*tsv .
+```
+
+**Plots**
+
+```{r, fig.height=8, fig.width=10, echo = FALSE}
+# Read in per-base quality score TSV files
+bp_16_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R1.tsv", header = TRUE, sep = "\t")
+bp_16_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_16_R2.tsv", header = TRUE, sep = "\t")
+bp_3_R1 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R1.tsv", header = TRUE, sep = "\t")
+bp_3_R2 <- read.table("/Users/sally_claridge/Desktop/BI624/sf-seq-qaa-sclaridg/stats_out/bp_3_R2.tsv", header = TRUE, sep = "\t")
+
+# Make per-base quality plots
+par(oma=c(0,0,2,0))
+par(mfrow = c(2, 2))
+plot(bp_16_R1,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     pch = 19,
+     cex = 0.5,
+     col = "mediumpurple1",
+     main = "16_3D_mbnl_R1 (forward)")
+plot(bp_16_R2,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     pch = 19,
+     cex = 0.5,
+     col = "mediumpurple3",
+     main = "16_3D_mbnl_R2 (reverse)")
+plot(bp_3_R1,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     pch = 19,
+     cex = 0.5,
+     col = "paleturquoise3",
+     main = "3_2B_control_R1 (forward)")
+plot(bp_3_R2,
+     ylim = c(0, 41),
+     ylab = "Mean Quality Score",
+     xlab = "Position in Read (bp)",
+     pch = 19,
+     cex = 0.5,
+     col = "paleturquoise4",
+     main = "3_2B_control_R2 (forward)")
+title(main = "Per-Base Sequence Quality from stats.py", outer = TRUE)
+```
+
+- The quality score plots that I generated are almost identical to those produced by FastQC. Since the plots were plotted using different aesthetics, it's difficult to see if there are any slight differences in the mean quality scores. The main difference is that FastQC produces error bars. Since I did not compute quartiles or standard deviations in my `stats.py` script, I am unable to plot information about the spread in quality scores per base.
+- The runtime between FastQC and my `stats.py` script were very different, even though I had to run my script on each file sequentially and FastQC ran on all four files simultaneously. Since I have the slrum email flag in my script, I get emails that tell me the run time of all my jobs. FastQC took 00:01:18 (HH:MM:SS) to run, whereas my `stats.py` script took 1:13:50. The difference in run time (outside of multi-threading) could potentially be due to the utility of the languages used. My code was written in Python, whereas FastQC was written in Java. There could be a functional difference between the two languages. Additionally, since I am a relatively new coder, I may have written my `stats.py` program in a more roundabout or "clunky" way than FastQC was written.
+
+
+
+
+Part 2 – Adaptor trimming comparison
+================================================================================
+
+3. *Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed?*
+
+**Differences**
+
+- `cutadapt`:
+    - Does not have whole-read quality filter (that I could find), only trimming or post-trimming quality filters
+    - Adaptor sequence is declared as a flag in the command
+    - N-tolerant
+    - Can convert a FASTQ file to a FASTA
+    - Takes gzipped files without a flag
+    - Error tolerance includes mismatches, insertions, and deletions (set with a proportion value that is multiplied by the length of the match to determine maximum error allowed)
+        - Default setting is to allow 10% error rate
+    - If one read is trimmed away completely, then `cutadapt` will leave the sequence as a sequence of 0, which leaves the header in place
+    - Written in Python
+- `process_shortreads`: 
+    - Has quality filtering for dropping reads with uncalled bases or low quality scores
+    - Adaptor sequence is declared as a flag in the command
+    - Allows for mismatches (set with an integer value)
+    - Takes gzipped files if flagged (`-i`)
+    - If one read is trimmed away completely, then the paired read is shunted to the orphan read file
+    - Written in C++ and Perl
+- `Trimmomatic`: 
+    - Has options for numerous read quality filters and trimming settings
+    - Requires a FASTA file containing your adapters with certain flags dictating how they should be used
+    - Has flags for specifying number of allowed mismatches and how accurate the match must be prior to trimming
+    - Takes gzipped files without a flag
+    - Written in Java
+
+**`cutadapt`**
+
+- I tried using `cutadapt` to trim the reads (see `cutadapt.srun` slurm script)
+- These are the adapters (taken from BI 623 Assignment 4):
+    - **Forward adapter**: `AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC`
+    - **Reverse adapter**: `AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT`
+- In the `.out` file for `cutadapt`, there are some statistics on how many reads contained the adaptor sequences:
+    - 16_3D_mbnl library:
+          - Read 1 with adapter: 1,002,960 (12.2%)
+          - Read 2 with adapter: 1,069,893 (13.0%)
+    - 3_2B_control library:
+          - Read 1 with adapter: 219,474 (3.2%)
+          - Read 2 with adapter: 268,119 (3.9%)
+
+*Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.*
+
+- I determined the total number of lines in each file and divided by 4 to get the readcounts:
+    - 16_3D_mbnl has 8,235,197 reads
+    - 3_2B_control has 6,873,509 reads
+```
+$ zcat 16_3D_mbnl_R1.fastq.gz | wc -l
+32940788
+$ zcat 3_2B_control_R1.fastq.gz | wc -l
+27494036
+```
+
+- Using the following command skeleton, I determined how many sequences in each file contained the adapter:
+```
+zcat <file_name> | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | grep "<adapter_sequence>" | wc -l
+```
+
+- Here is a table of the results of the code above:
+```{r}
+# Make vectors
+libraries <- c(rep("16_3D_mbnl", 4), rep("3_2B_control", 4))
+reads <- rep(c("R1", "R2"), 4)
+adaptors <- rep(c("Forward", "Forward", "Reverse", "Reverse"), 2)
+readcounts <- c(106349, 0, 0, 115921, 7056, 0, 0, 8157)
+total_reads <- c(rep(8235197, 4), rep(6873509, 4))
+percentages <- round((readcounts / total_reads) * 100, 2)
+
+# Make data frame
+adapter_data <- data.frame(libraries, reads, adaptors, readcounts, total_reads, percentages)
+colnames(adapter_data) <- c("Library", "Read", "Adaptor", "Readcount Containing Adaptor", "Total Reads in Library", "Percent Containing Adapter")
+
+# Make table
+knitr::kable(adapter_data, align = "c", caption = "Sequences in SF-Seq Libraries that Contain Index Sequences")
+```
+
+- These percentages are much lower than those produced by `cutadapt`. Since `grep` looks for exact matches, the percentages in the table are only for reads that contained the entire adaptor sequence. `cutadapt` looks for and trims partial adapter sequences as well, so there should be many more sequences trimmed with `cutadapt` than found with `grep`.
+- There were zero hits when the forward reads were grepped for the reverse adaptor and when the reverse reads were grepped for the forward adaptor. Conversely, when forward reads were grepped for forward adaptor and reverse for reverse, my grepping returned matches. This verifies the adaptor sequence orientation I expected. 
+
+
+
+4. *Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.*
+
+- I used Unix commands to get the distributions of read lengths (one for R1s, one for R2s) for the trimmed data:
+
+```
+zcat 16_3D_mbnl_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R1_dist.txt
+
+zcat 16_3D_mbnl_R2.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 16_3D_mbnl_R2_dist.txt
+
+zcat 3_2B_control_R1.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 3_2B_control_R1_dist.txt
+
+zcat 3_2B_control_R2.out.fastq.gz | grep -A 1 "^@" | grep -v "^--$" | grep -v "^@" | awk '{print  length($0)}' | sort -n | uniq -c > 3_2B_control_R2_dist.txt
+```
+
+- I copied the distribution files to my local machine:
+```
+scp hpc1:/home/sclaridg/bi624/ps1/cutadapt_out/*txt .
+```
+
+- The text files had extra spaces preceeding some of the entries, so I manually edited the files to correspond with the `sep = " "` argument when reading the files in to R
+- Here are the read length distributions for both libraries:
+```{r Length Dists, fig.height=7, fig.width=10}
+par(oma=c(0,0,2,0))
+par(mfrow = c(1, 2))
+
+### 16_3D_mbnl library
+# Read in the data tables
+mbnl_R1 <- read.table("./cutadapt_out/16_3D_mbnl_R1_dist.txt", sep = " ")
+mbnl_R2 <- read.table("./cutadapt_out/16_3D_mbnl_R2_dist.txt", sep = " ")
+# Plot the R1 distribution
+plot(mbnl_R1$V2, log10(mbnl_R1$V1),
+     main = "16_3D_mbnl Library",
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 25,
+     bg = "mediumpurple1")
+# Plot the R2 distribution
+points(mbnl_R2$V2, log10(mbnl_R2$V1),
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 3,
+     col = "turquoise")
+legend("topleft",
+       c("Trimmed R1 Reads", "Trimmed R2 Reads"),
+       pch = c(25, 3),
+       pt.bg = c("mediumpurple1", "turquoise"),
+       col = c("black", "turquoise"),
+       bty = "n",
+       cex = 0.8,
+       xjust = 1)
+
+### 3_2B_control library
+# Read in the data tables
+control_R1 <- read.table("./cutadapt_out/3_2B_control_R1_dist.txt", sep = " ")
+control_R2 <- read.table("./cutadapt_out/3_2B_control_R2_dist.txt", sep = " ")
+# Plot the R1 distribution
+plot(control_R1$V2, log10(control_R1$V1),
+     main = "3_2B_control Library",
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 25,
+     bg = "mediumpurple1")
+# Plot the R2 distribution
+points(control_R2$V2, log10(control_R2$V1),
+     xlab = "Length (bp)",
+     ylab = "log10(Frequency)",
+     pch = 3,
+     col = "turquoise")
+legend("topleft",
+       c("Trimmed R1 Reads", "Trimmed R2 Reads"),
+       pch = c(25, 3),
+       pt.bg = c("mediumpurple1", "turquoise"),
+       col = c("black", "turquoise"),
+       bty = "n",
+       cex = 0.8,
+       xjust = 1)
+
+title(main = "Read Length Distribution for Trimmed Reads\nfrom Two SF-Seq Libraries", outer = TRUE)
+```
+
+
+
+5. *Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.*
+  
+- From the fragment analyzer, if the average fragment size is small, then we would expect a larger proportion of reads to contain adapter since there would be a greater likelihood of sequencing through the insert and into the adapter. The fragment analyzer traces of all of the libraries that were sequenced (including my two) have median sizes in the range of 300-500 bp. Since these medians are relatively large, and right shifted from the ~240-bp expectation if our insert sizes were 100 bp, we would expect a small proportion of our reads to be trimmed.
+- My percentages of reads that were trimmed are relatively low, with the 16_3D_mbnl library having percentages of 12.2% and 13.0%, and the 3_2B_control library with 3.2% and 3.9%. This aligns with the above expectation that a relatively small proportion of our reads would be trimmed. The average fragment size for the 16_3D_mbnl library was 279 bp and for the 3_2B_control library, 489 bp. It makes sense that a greater percentage of reads were trimmed for the library with a smaller average fragment size.
+
+
+
+
+Part 3 – rRNA reads and strand-specificity
+================================================================================
+
+6. *Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.*
+
+- I used the Rfam database to find the rRNA sequences
+- I searched for "Mus musculus" and filtered the results for rRNA and manually looked through around all of the 319 sequence results and identified the four Rfam accession numbers that matched with these sequences: RF00001, RF00002, RF01960, and RF02543
+- I got these FASTA files from the FTP server using `wget ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/fasta_files/<file_name>`, and then grepped for "Mus musculus", which gave me all the header lines containing my species of interest
+    - I used `wc- -l` to determine how many sequences were represented in all three files
+        - `RF00001.fa.gz` had 190 sequences
+        - `RF00002.fa.gz` had 2 sequences
+        - `RF01960.fa.gz` had 24 sequences
+        - `RF02543.fa.gz` had 98 sequences
+        - This resulted in 314 sequences, which I felt was sufficient for this analysis, since 3 bacterial and 1 archaeal sequences showed up in my "Mus musculus" search (these were not included in my rRNA database for GSNAP)
+        - This yields 1 missing sequence from the 319 search results, which I felt was okay to leave out
+- I then combined these four FASTA files containing rRNA sequences from Rfam into one FASTA file called `mus_musculus_rrna.fasta` to feed into `gmap_build`:
+
+```
+# Compile entries
+zcat RF00001.fa.gz | grep -A 1 "Mus musculus" > mus_musculus_rrna_a.fasta
+zcat RF00002.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+zcat RF01960.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+zcat RF02543.fa.gz | grep -A 1 "Mus musculus" >> mus_musculus_rrna_a.fasta
+
+# Remove "--" lines (artifacts from grepping)
+grep -v "^--$" mus_musculus_rrna_a.fasta > mus_musculus_rrna.fasta 
+```
+
+- Loaded GMAP/GSNAP:
+```
+ml GMAP-GSNAP/2017-06-20
+```
+
+- Built a GMAP database called `mus_musculus` based on the Rfam sequences:
+```
+gmap_build -D /home/sclaridg/bi624/ps1 -d mus_musculus mus_musculus_rrna.fasta
+```
+
+- Submitted my `gsnap.srun` slurm script to run GSNAP on both of my trimmed libraries
+    - I used the `--no-sam-headers` to preclude the addition of `@` lines from the top of all of my SAM files
+    - I used the `--split-output` flag in my GSNAP command, which resulted in multiple output SAM files for each library:
+        - `nomapping`: reads that could not be aligned
+        - `paired_uniq_inv`: both paired-end reads could be aligned uniquely, but indicate an inversion between them
+        - `paired_uniq_long`: both paired-end reads could be aligned uniquely, but indicate a large deletion between them
+        - `paired_uniq_src`: both paired-end reads could be aligned uniquely, but indicate a scramble (genomic order is mixed up)
+        - `paired_mult`: both paired-end reads could be aligned near each other, representing an inversion, scramble, or deletion, but there are multiple alignments
+        - `concordant_uniq`: both paired-end reads could be aligned to exactly 1 location
+        - `concordant_mult`: both paired-end reads could be aligned to >1 locations
+        - `halfmapping_uniq`, `halfmapping_mult`: same as concordant except only one of the paired reads aligned
+        - `unpaired_uniq`, `unpaired_mult`: same as concordant except the two reads could not be paired
+        
+**Counting Reads from rRNA Using `nomapping` Files**
+
+- If I count the number of reads in the `nomapping` output file and divide that number by the number of reads that were fed to GSNAP (i.e. # of R1 reads + # of R2 reads), I will get out the proportion of total reads that did not to the rRNA database:
+    - **16_3D_mbnl** has 8,235,197 reads, for a total of 16,470,394 reads fed into GSNAP (including trimmed reads with a length of 0)
+        - Using `wc -l`, I determined there were 16,349,157 reads in the `nomapping` file for this library, which corresponds to 99.26%:
+$$ \frac{16,349,157\ no-mapping\ reads}{16,470,394\ total\ reads}* 100 = 99.26\% $$
+        - Thus, it so follows that $$ 100 - 99.26 = 0.74\% $$ of reads in this library map to the rRNA database
+    - **3_2B_control** has 6,873,509 reads for a total of 13,747,018 reads fed into GSNAP (including trimmed reads with a length of 0)
+        - There were 12,256,989 reads in the `nomapping` file for this library, which corresponds to 89.16%:
+$$ \frac{12,256,989\ no-mapping\ reads}{13,747,018\ total\ reads}* 100 = 89.16\% $$
+        - Thus, it so follows that $$ 100 - 89.16 = 10.84\% $$ of reads in this library map to the rRNA database
+        
+**Counting Reads from rRNA Using Primary Paired Alignments**
+
+- Another way of thinking about reads that could be from rRNA sequences is to be *much* more stringent and only count reads that mapped as a pair, which excludes all reads in which only R1 or R2 (not both) aligned to the rRNA database (e.g. `halfmapping`, `unpaired`)
+    - This is probably not the best way to think about this, but I thought it was interesting
+- These files contain mapped pairs: `paired_uniq_inv`, `paired_uniq_long`, `paired_uniq_src`, `concordant_uniq`, `concordant_mult` and `paired_mult`
+    - Both `concordant_mult` and `paired_mult` contain multiple alignment information, so I looked at the counts of the bitwise flags to determine how many were primary alignments and how many were secondary alignments
+    - In the table below, I only report primary alignments.
+    - For example, `16_3D_mbnl.concordant_mult` has 4 lines in it; two are R1 and R2 primary alignments and the other two are their secondary alignments. I only reported 2 reads below.
+    - To identify the meaning of flags, I used [this interpreter](https://broadinstitute.github.io/picard/explain-flags.html). If "not primary alignment" was checked, I did not include that alignment in my counts in the table.
+- Here is a table of all of the alignments from each of these files for both libraries:
+```{r}
+mbnl_counts <- c(0, 0, 6, 12, 2, 0, sum(0, 0, 6, 12, 2, 0))
+control_counts <- c(40, 0, 6786, 14666, 270, 152, sum(40, 0, 6786, 14666, 270, 152))
+
+z <- rbind(mbnl_counts, control_counts)
+
+colnames(z) <- c("paired_uniq_inv", "paired_uniq_long", "paired_uniq_src", "concordant_uniq", "concordant_mult", "paired_mult", "Total Primary Alignments")
+rownames(z) <- c("16_3D_mbnl", "3_2B_control")
+
+knitr::kable(z, align = "c", caption = "Counts of Reads that Mappped to the rRNA Database in Pairs")
+```
+
+- If I do the calculations similar to those above, then for the **16_3D_mbnl** library , 0.00012% (i.e. 20 / 16,470,394 * 100) of reads were paired and from rRNA
+- For the **3_2B_control** library, 0.16% (i.e. 21,914 / 13,747,018 * 100) of reads were paired and from rRNA
+
+
+
+7. *Demonstrate convincingly that the SF-Seq data are from "strand-specific" RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.*
+
+- If the libraries are strand-sepcific, then there should be an abundance of poly-A tails represented in one read file over poly-Ts (and vice versa in the other read file) because we did am mRNA capture step during library preps
+- Assuming that the poly-A tails only show up at the end of the reads, I can dictate that the poly-A sequence had to be at the end using the `$` when grepping, though this assumption will underestimate the number of reads that contain pieces of poly-A tails
+- Here are the grepping results for **16_3D_mbnl**:
+
+```
+# R1
+$ zcat 16_3D_mbnl_R1.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+307
+$ zcat 16_3D_mbnl_R1.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+497
+
+# R2
+$ zcat 16_3D_mbnl_R2.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+917
+$ zcat 16_3D_mbnl_R2.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+797
+```
+
+- And for **3_2B_control**:
+
+```
+# R1
+$ zcat 3_2B_control_R1.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+178
+$ zcat 3_2B_control_R1.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+3655
+
+# R2
+$ zcat 3_2B_control_R2.fastq.gz | awk '/AAAAAAAAAAAAAAAAAAAAAAAAA$/{ count++ } END {print count}'
+1784
+$ zcat 3_2B_control_R2.fastq.gz | awk '/TTTTTTTTTTTTTTTTTTTTTTTTT$/{ count++ } END {print count}'
+623
+```
+
+- Here is a table for visualizing the counts above more clearly:
+
+| Library | Poly-N | R1 Count | R2 Count |
+|-----+-------+-------+-------|
+| 16_3D_mbnl | $A_{25}$ | 307 | 917 |
+| 16_3D_mbnl | $T_{25}$ | 497 | 797 |
+| 3_2B_control | $A_{25}$ | 178 | 1784 |
+| 3_2B_control | $T_{25}$ | 3655 | 623 |
+
+- Both libraries follow the pattern expected for a stranded library. For both libraries, the R1 files have more reads containing poly-Ts than poly-As and the R2 files have more reads containing poly-As than poly-Ts. This observation becomes more clear when I look at the proportions of poly-As to poly-Ts. For each library, one file has a ratio greater than 1 and the other file has a ratio less than 1.
+
+| Library | File | $A_{25} / T_{25}$ Ratio |
+|-----+-------+-------+-------|
+| 16_3D_mbnl | R1 | 0.62 |
+| 16_3D_mbnl | R2 | 1.15 |
+| 3_2B_control | R1 | 0.049 |
+| 3_2B_control | R2 | 2.86 |
+
+
+To turn in your work for this assignment
+================================================================================
+Please upload your Talapas batch script/code, FastQC plots, answers to questions, and any additional plots/code to github. 

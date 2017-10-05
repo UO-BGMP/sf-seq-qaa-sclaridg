@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --partition=long
+#SBATCH --job-name=cutadapt
+#SBATCH --output=/home/sclaridg/bi624/ps1/logs/cutadapt.out
+#SBATCH --error=/home/sclaridg/bi624/ps1/logs/cutadapt.err
+#SBATCH --time=0-24:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH --mail-user=sclaridg@uoregon.edu
+#SBATCH --mail-type=ALL
+
+# Load modules
+ml easybuild ifort/2017.1.132-GCC-6.3.0-2.27 impi/2017.1.132
+ml cutadapt/1.14-Python-2.7.13
+ml list
+
+dir=/home/sclaridg/bi624/ps1/
+
+# Run cutadapt on 16_3D_mbnl library
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o $dir/cutadapt_out/16_3D_mbnl_R1.out.fastq.gz -p $dir/cutadapt_out/16_3D_mbnl_R2.out.fastq.gz $dir/16_3D_mbnl_R1.fastq.gz $dir/16_3D_mbnl_R2.fastq.gz
+
+# Run cutadapt on 3_2B_control library
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o $dir/cutadapt_out/3_2B_control_R1.out.fastq.gz -p $dir/cutadapt_out/3_2B_control_R2.out.fastq.gz $dir/3_2B_control_R1.fastq.gz $dir/3_2B_control_R2.fastq.gz
+
+exit
